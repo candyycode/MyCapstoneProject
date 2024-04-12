@@ -27,7 +27,7 @@ export default function CategoryList() {
                   View Products
                 </button>
               </li>
-            ),
+            );
           })}
       </ul>
     </>

@@ -537,6 +537,11 @@ const init = async () => {
 
   console.log(productsInCart);
 
+  // Define a route handler for the root URL
+app.get("/", (req, res) => {
+    res.send("Welcome to the Ultimate Pet Store!");
+  });
+
   // Start server
   const port = process.env.PORT || 3000;
   app.listen(port, () => console.log(`listening on port ${port}`));
