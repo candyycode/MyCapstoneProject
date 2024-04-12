@@ -404,6 +404,12 @@ const init = async () => {
       }),
     ]);
 
+    const [cat, dog, exotics] = await Promise.all([
+        createCategory({ name: "cat" }),
+        createCategory({ name: "dog" }),
+        createCategory({ name: "exotics" }),
+      ]);
+
     const productsDisplay = await Promise.all([
       createProduct({
         name: "cat toy",
@@ -435,11 +441,6 @@ const init = async () => {
       }),
     ]);
 
-    const [cat, dog, exotics] = await Promise.all([
-        createCategory({ name: "cat" }),
-        createCategory({ name: "dog" }),
-        createCategory({ name: "exotics" }),
-      ]);
 
   const users = await seeUsers();
   console.log("Users: ", users);
@@ -457,32 +458,32 @@ const init = async () => {
   const productsInCart = await Promise.all([
     createCartProduct({
       cart_id: carts[0].id,
-      product_id: cattoy.id,
+      product_id: productsDisplay[0].id, 
       quantity: 3,
     }),
     createCartProduct({
       cart_id: carts[0].id,
-      product_id: catfood.id,
+      product_id: productsDisplay[1].id, 
       quantity: 2,
     }),
     createCartProduct({
       cart_id: carts[1].id,
-      product_id: dogfood.id,
+      product_id: productsDisplay[2].id, 
       quantity: 1,
     }),
     createCartProduct({
       cart_id: carts[1].id,
-      product_id: dogcollar.id,
+      product_id: productsDisplay[3].id, 
       quantity: 5,
     }),
     createCartProduct({
       cart_id: carts[1].id,
-      product_id: cattoy.id,
+      product_id: productsDisplay[0].id, 
       quantity: 4,
     }),
     createCartProduct({
       cart_id: carts[2].id,
-      product_id: catfood.id,
+      product_id: productsDisplay[1].id, 
       quantity: 1,
     }),
   ]);

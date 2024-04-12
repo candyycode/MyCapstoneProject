@@ -29,6 +29,11 @@ const createTables = async () => {
     is_admin BOOLEAN DEFAULT FALSE
   );
 
+  CREATE TABLE categories(
+    id UUID PRIMARY KEY,
+    name TEXT UNIQUE NOT NULL
+);
+
   CREATE TABLE products(
     id UUID PRIMARY KEY,
     created_at TIMESTAMP DEFAULT now(),
@@ -36,7 +41,8 @@ const createTables = async () => {
     name VARCHAR(100) NOT NULL,
     price NUMERIC NOT NULL,
     description VARCHAR(255) NOT NULL,
-    inventory INTEGER
+    inventory INTEGER,
+    category_name TEXT REFERENCES categories(name) NOT NULL
 );
 
   CREATE TABLE carts(
@@ -50,11 +56,6 @@ const createTables = async () => {
     product_id UUID REFERENCES products(id) NOT NULL,
     quantity INTEGER NOT NULL,
     CONSTRAINT unique_cart_product UNIQUE (cart_id, product_id)
-  );
-
-  CREATE TABLE catgories(
-    id UUID PRIMARY KEY,
-    name TEXT UNIQUE NOT NULL
   );
   `;
   await client.query(SQL);
@@ -161,16 +162,16 @@ const createCartProduct = async ({ cart_id, product_id, quantity }) => {
 
 // View cart products
 const seeCartProducts = async (cart_id) => {
-  const query = `
-      SELECT products.id, products.name, products.price, cart_products.quantity
-      FROM cart_products
-      INNER JOIN products
-      ON products.id = cart_products.product_id
-      WHERE cart_products.cart_id = $1
-    `;
-  const { rows } = await client.query(SQL, [cart_id]);
-  return response.rows[0];
-};
+    const SQL = `
+        SELECT products.id, products.name, products.price, cart_products.quantity
+        FROM cart_products
+        INNER JOIN products
+        ON products.id = cart_products.product_id
+        WHERE cart_products.cart_id = $1
+      `;
+    const { rows } = await client.query(SQL, [cart_id]);
+    return rows[0];
+  };
 
 // Add a product to cart
 const addProductToCart = async ({ cart_id, product_id, quantity }) => {
@@ -238,20 +239,26 @@ const deleteUser = async (id) => {
 // admin
 
 const seeUsers = async () => {
-  const query = `
-      SELECT id, email, firstName, lastName, phoneNumber, is_admin
-      FROM users
-    `;
-  const { rows } = await client.query(SQL);
-  return Response.rows[0];
-};
+    const SQL = `
+        SELECT id, email, firstName, lastName, phone_number, is_admin
+        FROM users
+      `;
+    const { rows } = await client.query(SQL);
+    return rows; 
+  };
 
-const createProduct = async ({ name, price, description, inventory }) => {
+const createProduct = async ({
+  name,
+  price,
+  description,
+  inventory,
+  category_name,
+}) => {
   const SQL = `
-    INSERT INTO products(id, name, price, description, inventory)
-    VALUES($1, $2, $3, $4, $5)
-    RETURNING *
-  `;
+      INSERT INTO products(id, name, price, description, inventory, category_name)
+      VALUES($1, $2, $3, $4, $5, $6)
+      RETURNING *
+    `;
   const response = await client.query(SQL, [
     uuid.v4(),
     name,
@@ -263,7 +270,7 @@ const createProduct = async ({ name, price, description, inventory }) => {
   return response.rows[0];
 };
 
-const updateProduct = async ({ name, price, description, inventory }) => {
+const updateProduct = async ({ name, price, description, inventory, category }) => {
   const SQL = `
     UPDATE products
     SET name =$1 price=$2, description=$3, inventory=$4, category_name=$5, updated_at= now()
