@@ -4,10 +4,10 @@ const client = new pg.Client(
   process.env.DATABASE_URL || "postgres://localhost/my_store_db"
 );
 const uuid = require("uuid");
-const bcrypt = require('bcrypt');
+const bcrypt = require("bcrypt");
 // install the jsonwebtoken library & secret
-const jwt = require('jsonwebtoken');
-const JWT = process.env.JWT || 'shhh';
+const jwt = require("jsonwebtoken");
+const JWT = process.env.JWT || "shhh";
 
 const createTables = async () => {
   const SQL = `
@@ -15,6 +15,7 @@ const createTables = async () => {
   DROP TABLE IF EXISTS carts;
   DROP TABLE IF EXISTS users;
   DROP TABLE IF EXISTS products;
+  DROP TABLE IF EXISTS categories;
 
   CREATE TABLE users(
     id UUID PRIMARY KEY,
@@ -50,12 +51,17 @@ const createTables = async () => {
     quantity INTEGER NOT NULL,
     CONSTRAINT unique_cart_product UNIQUE (cart_id, product_id)
   );
+
+  CREATE TABLE catgories(
+    id UUID PRIMARY KEY,
+    name TEXT UNIQUE NOT NULL
+  );
   `;
   await client.query(SQL);
 };
 
 // all  products
-const seeProducts = async()=> {
+const seeProducts = async () => {
   const SQL = `
     SELECT *
     FROM products
@@ -65,7 +71,7 @@ const seeProducts = async()=> {
 };
 
 // single product
-const seeProduct = async(id)=> {
+const seeProduct = async (id) => {
   const SQL = `
     SELECT *
     FROM products
@@ -75,8 +81,29 @@ const seeProduct = async(id)=> {
   return response.rows;
 };
 
+// categories
+const seeCategories = async () => {
+  const SQL = `
+        SELECT *
+        FROM categories
+    `;
+  const response = await client.query(SQL);
+  return response.rows;
+};
+
+// view all products in one category
+const seeCategoryProducts = async (category_name) => {
+  const SQL = `
+        SELECT *
+        FROM products
+        WHERE category_name=$1
+    `;
+  const response = await client.query(SQL, [category_name]);
+  return response.rows;
+};
+
 //  log in user
-const createUser = async ({email, password, is_admin}) => {
+const createUser = async ({ email, password, is_admin }) => {
   const SQL = `
     INSERT INTO users(id, email, password, is_admin)
     VALUES($1, $2, $3, $4)
@@ -86,71 +113,83 @@ const createUser = async ({email, password, is_admin}) => {
     uuid.v4(),
     email,
     await bcrypt.hash(password, 5),
-    is_admin
+    is_admin,
   ]);
   return response.rows[0];
 };
 
 // new cart
-const createCart = async({user_id})=> {
+const createCart = async ({ user_id }) => {
   const SQL = `
     INSERT INTO carts(id, user_id )
     VALUES($1, $2)
     RETURNING *
   `;
-  const response = await client.query(SQL,[uuid.v4(), user_id ]);
+  const response = await client.query(SQL, [uuid.v4(), user_id]);
   return response.rows[0];
 };
 
 // see cart details
-const seeCart = async(userId)=> {
+const seeCart = async (userId) => {
   const GET_CART_ID = `
     SELECT *
     FROM carts
     WHERE user_id=$1
   `;
   const cartIdRes = await client.query(GET_CART_ID, [userId]);
-    if (!cartIdRes) {
-      throw new Error('No cart for that user')
-    }
-    return cartIdRes.rows[cartIdRes.rows.length-1];
+  if (!cartIdRes) {
+    throw new Error("No cart available");
+  }
+  return cartIdRes.rows[cartIdRes.rows.length - 1];
 };
 
 // new cart product
-const createCartProduct = async({cart_id, product_id, quantity})=> {
-    const SQL = `
+const createCartProduct = async ({ cart_id, product_id, quantity }) => {
+  const SQL = `
       INSERT INTO cart_products(id, cart_id, product_id, quantity)
       VALUES($1, $2, $3, $4)
       RETURNING *
     `;
-    const response = await client.query(SQL,[uuid.v4(), cart_id, product_id, quantity]);
-    return response.rows[0];
-  };
-
-// view cart products
-const seeCartProducts = async(cart_id)=> {
-    const SQL = `
-      SELECT *
-      FROM cart_products
-      WHERE cart_id = $1
-    `;
-    const response = await client.query(SQL, [cart_id]);
-    return response.rows;
+  const response = await client.query(SQL, [
+    uuid.v4(),
+    cart_id,
+    product_id,
+    quantity,
+  ]);
+  return response.rows[0];
 };
 
-// add a product to cart
-const addProductToCart = async({cart_id, product_id, quantity}) => {
+// View cart products
+const seeCartProducts = async (cart_id) => {
+  const query = `
+      SELECT products.id, products.name, products.price, cart_products.quantity
+      FROM cart_products
+      INNER JOIN products
+      ON products.id = cart_products.product_id
+      WHERE cart_products.cart_id = $1
+    `;
+  const { rows } = await client.query(SQL, [cart_id]);
+  return response.rows[0];
+};
+
+// Add a product to cart
+const addProductToCart = async ({ cart_id, product_id, quantity }) => {
   const SQL = `
     INSERT
     INTO cart_products (id, cart_id, product_id, quantity)
     VALUES($1, $2, $3, $4)
     RETURNING *
   `;
-  const response = await client.query(SQL, [uuid.v4(), cart_id, product_id, quantity]);
+  const response = await client.query(SQL, [
+    uuid.v4(),
+    cart_id,
+    product_id,
+    quantity,
+  ]);
   return response.rows[0];
 };
 
-const deleteProductFromCart = async({cart_id, product_id}) => {
+const deleteProductFromCart = async ({ cart_id, product_id }) => {
   const SQL = `
     DELETE
     FROM cart_products
@@ -159,9 +198,9 @@ const deleteProductFromCart = async({cart_id, product_id}) => {
   `;
   const response = await client.query(SQL, [cart_id, product_id]);
   return response.rows[0];
-}
+};
 
-const changeQuantity = async({cart_id, product_id, quantity}) => {
+const changeQuantity = async ({ cart_id, product_id, quantity }) => {
   const SQL = `
     UPDATE cart_products
     SET quantity=$1
@@ -170,20 +209,25 @@ const changeQuantity = async({cart_id, product_id, quantity}) => {
   `;
   const response = await client.query(SQL, [cart_id, product_id, quantity]);
   return response.rows[0];
-}
+};
 
-const updateUser = async({firstName, lastName, phone_number, id})=> {
+const updateUser = async ({ firstName, lastName, phone_number, id }) => {
   const SQL = `
     UPDATE users
     SET firstName=$1, lastName=$2, phone_number=$3, updated_at=now()
     WHERE id=$4
     RETURNING *
   `;
-  const response = await client.query(SQL, [firstName, lastName, phone_number, id]);
+  const response = await client.query(SQL, [
+    firstName,
+    lastName,
+    phone_number,
+    id,
+  ]);
   return response.rows;
 };
 
-const deleteUser = async(id)=> {
+const deleteUser = async (id) => {
   const SQL = `
     DELETE FROM users
     where id = $1
@@ -192,13 +236,14 @@ const deleteUser = async(id)=> {
 };
 
 // admin
-const seeUsers = async()=> {
-  const SQL = `
-    SELECT *
-    FROM users
-  `;
-  const response = await client.query(SQL);
-  return response.rows;
+
+const seeUsers = async () => {
+  const query = `
+      SELECT id, email, firstName, lastName, phoneNumber, is_admin
+      FROM users
+    `;
+  const { rows } = await client.query(SQL);
+  return Response.rows[0];
 };
 
 const createProduct = async ({ name, price, description, inventory }) => {
@@ -207,22 +252,31 @@ const createProduct = async ({ name, price, description, inventory }) => {
     VALUES($1, $2, $3, $4, $5)
     RETURNING *
   `;
-  const response = await client.query(SQL, [uuid.v4(), name, price, description, inventory]);
+  const response = await client.query(SQL, [
+    uuid.v4(),
+    name,
+    price,
+    description,
+    inventory,
+    category_name,
+  ]);
   return response.rows[0];
 };
 
-const updateProduct = async({ name, price, description, inventory })=> {
+const updateProduct = async ({ name, price, description, inventory }) => {
   const SQL = `
     UPDATE products
-    SET name =$1 price=$2, description=$3, inventory=$4, updated_at= now()
-    WHERE id = $5
+    SET name =$1 price=$2, description=$3, inventory=$4, category_name=$5, updated_at= now()
+    WHERE id = $6
     RETURNING *
   `;
-  const response = await client.query(SQL, [{ name, price, description, inventory }]);
+  const response = await client.query(SQL, [
+    { name, price, description, inventory, category_name },
+  ]);
   return response.rows[0];
 };
 
-const deleteProduct = async(id)=> {
+const deleteProduct = async (id) => {
   const SQL = `
     DELETE FROM products
     where id = $1
@@ -230,42 +284,54 @@ const deleteProduct = async(id)=> {
   await client.query(SQL, [id]);
 };
 
-const seeCarts = async() => {
+const seeCarts = async () => {
   const SQL = `
     SELECT *
     FROM carts
-  ;`
+  ;`;
   const response = await client.query(SQL);
   return response.rows;
-}
+};
+
+const createCategory = async ({ name }) => {
+  const SQL = `
+    INSERT INTO categories(id, name)
+    VALUES($1, $2)
+    RETURNING *
+  `;
+  const response = await client.query(SQL, [uuid.v4(), name]);
+  return response.rows[0];
+};
 
 // password authentication
-const authenticate = async({ email, password })=> {
+const authenticate = async ({ email, password }) => {
   const SQL = `
     SELECT id, email, password
     FROM users
     WHERE email=$1;
   `;
   const response = await client.query(SQL, [email]);
-  if(!response.rows.length || (await bcrypt.compare(password, response.rows[0].password)) === false){
-    const error = Error('not authorized');
+  if (
+    !response.rows.length ||
+    (await bcrypt.compare(password, response.rows[0].password)) === false
+  ) {
+    const error = Error("not authorized");
     error.status = 401;
     throw error;
   }
-  const token = await jwt.sign({ id: response.rows[0].id}, JWT);
+  const token = await jwt.sign({ id: response.rows[0].id }, JWT);
   return { token: token };
 };
 
 // use token to secure login process
-const findUserWithToken = async(token)=> {
+const findUserWithToken = async (token) => {
   let id;
   try {
     const payload = await jwt.verify(token, JWT);
-    console.log({payload})
+    console.log({ payload });
     id = payload.id;
-  }
-  catch(ex){
-    const error = Error('not authorized');
+  } catch (ex) {
+    const error = Error("not authorized");
     error.status = 401;
     throw error;
   }
@@ -275,9 +341,9 @@ const findUserWithToken = async(token)=> {
     WHERE id=$1;
   `;
   const response = await client.query(SQL, [id]);
-  console.log(response.rows[0], 'line 269')
-  if(!response.rows.length){
-    const error = Error('not authorized');
+  console.log(response.rows[0], "line 269");
+  if (!response.rows.length) {
+    const error = Error("not authorized");
     error.status = 401;
     throw error;
   }
@@ -289,6 +355,8 @@ module.exports = {
   createTables,
   seeProducts,
   seeProduct,
+  seeCategories,
+  seeCategoryProducts,
   createUser,
   createCart,
   seeCart,
@@ -301,8 +369,9 @@ module.exports = {
   deleteUser,
   seeUsers,
   createProduct,
+  createCategory,
   updateProduct,
   deleteProduct,
   authenticate,
-  findUserWithToken
+  findUserWithToken,
 };
