@@ -21,11 +21,11 @@ const createTables = async () => {
     id UUID PRIMARY KEY,
     created_at TIMESTAMP DEFAULT now(),
     updated_at TIMESTAMP DEFAULT now(),
-    email VARCHAR(100) NOT NULL,
+    email VARCHAR(255) NOT NULL,
     password VARCHAR(100) NOT NULL,
     firstName VARCHAR(100),
     lastName VARCHAR(100),
-    phone_number VARCHAR(100),
+    phoneNumber VARCHAR(100),
     is_admin BOOLEAN DEFAULT FALSE
   );
 
@@ -38,9 +38,10 @@ const createTables = async () => {
     id UUID PRIMARY KEY,
     created_at TIMESTAMP DEFAULT now(),
     updated_at TIMESTAMP DEFAULT now(),
-    name VARCHAR(100) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    imageURL TEXT,
     price NUMERIC NOT NULL,
-    description VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL,
     inventory INTEGER,
     category_name TEXT REFERENCES categories(name) NOT NULL
 );
@@ -162,16 +163,16 @@ const createCartProduct = async ({ cart_id, product_id, quantity }) => {
 
 // View cart products
 const seeCartProducts = async (cart_id) => {
-    const SQL = `
+  const SQL = `
         SELECT products.id, products.name, products.price, cart_products.quantity
         FROM cart_products
         INNER JOIN products
         ON products.id = cart_products.product_id
         WHERE cart_products.cart_id = $1
       `;
-    const { rows } = await client.query(SQL, [cart_id]);
-    return rows[0];
-  };
+  const { rows } = await client.query(SQL, [cart_id]);
+  return rows[0];
+};
 
 // Add a product to cart
 const addProductToCart = async ({ cart_id, product_id, quantity }) => {
@@ -212,17 +213,27 @@ const changeQuantity = async ({ cart_id, product_id, quantity }) => {
   return response.rows[0];
 };
 
-const updateUser = async ({ firstName, lastName, phone_number, id }) => {
+const seeUser = async (id) => {
+  const SQL = `
+      SELECT id, email, firstName, lastName, phoneNumber
+      FROM users
+      WHERE id=$1
+    `;
+  const response = await client.query(SQL, [id]);
+  return response.rows[0];
+};
+
+const updateUser = async ({ firstName, lastName, phoneNumber, id }) => {
   const SQL = `
     UPDATE users
-    SET firstName=$1, lastName=$2, phone_number=$3, updated_at=now()
+    SET firstName=$1, lastName=$2, phoneNumber=$3, updated_at=now()
     WHERE id=$4
     RETURNING *
   `;
   const response = await client.query(SQL, [
     firstName,
     lastName,
-    phone_number,
+    phoneNumber,
     id,
   ]);
   return response.rows;
@@ -239,29 +250,31 @@ const deleteUser = async (id) => {
 // admin
 
 const seeUsers = async () => {
-    const SQL = `
-        SELECT id, email, firstName, lastName, phone_number, is_admin
+  const SQL = `
+        SELECT id, email, firstName, lastName, phoneNumber, is_admin
         FROM users
       `;
-    const { rows } = await client.query(SQL);
-    return rows; 
-  };
+  const { rows } = await client.query(SQL);
+  return rows;
+};
 
 const createProduct = async ({
   name,
+  imageURL,
   price,
   description,
   inventory,
   category_name,
 }) => {
   const SQL = `
-      INSERT INTO products(id, name, price, description, inventory, category_name)
-      VALUES($1, $2, $3, $4, $5, $6)
+      INSERT INTO products(id, imageURL, name, price, description, inventory, category_name)
+      VALUES($1, $2, $3, $4, $5, $6, $7)
       RETURNING *
     `;
   const response = await client.query(SQL, [
     uuid.v4(),
     name,
+    imageURL,
     price,
     description,
     inventory,
@@ -270,15 +283,22 @@ const createProduct = async ({
   return response.rows[0];
 };
 
-const updateProduct = async ({ name, price, description, inventory, category }) => {
+const updateProduct = async ({
+  name,
+  imageURL,
+  price,
+  description,
+  inventory,
+  category_name,
+}) => {
   const SQL = `
     UPDATE products
-    SET name =$1 price=$2, description=$3, inventory=$4, category_name=$5, updated_at= now()
-    WHERE id = $6
+    SET name =$1 , imageURL=$2, price=$3, description=$4, inventory=$5, category_name=$6, updated_at= now()
+    WHERE id = $7
     RETURNING *
   `;
   const response = await client.query(SQL, [
-    { name, price, description, inventory, category_name },
+    { name, imageURL, price, description, inventory, category_name },
   ]);
   return response.rows[0];
 };
@@ -326,7 +346,7 @@ const authenticate = async ({ email, password }) => {
     error.status = 401;
     throw error;
   }
-  const token = await jwt.sign({ id: response.rows[0].id }, JWT);
+  const token = await jwt.sign({ admin: response.rows[0].is_admin }, JWT);
   return { token: token };
 };
 
@@ -373,6 +393,7 @@ module.exports = {
   deleteProductFromCart,
   changeQuantity,
   updateUser,
+  seeUser,
   deleteUser,
   seeUsers,
   createProduct,
