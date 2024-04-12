@@ -1,7 +1,4 @@
 // import packages
-const express = require("express");
-const morgan = require("morgan");
-const path = require("path");
 const {
   client,
   createTables,
@@ -28,25 +25,29 @@ const {
   findUserWithToken,
 } = require("./db");
 
+const cors = require('cors');
+const express = require("express");
 const app = express();
 
-// Middleware
 app.use(express.json());
-app.use(morgan("dev"));
-app.get("/", (req, res) =>
-  res.send("Server is running and listening on port 3000")
-);
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(err.status || 500).send({ error: err.message });
-});
+// Log the requests as they come in
+app.use(require("morgan")("dev"));
+
+app.use(cors({
+  origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:5173'],
+  methods: ['GET', 'POST', 'PUT','DELETE'],
+  credentials: true,
+  withCredentials: true,
+}))
+
+//for deployment
+const path = require('path');
 
 // Custom middleware for checking if user is logged in
 const isLoggedIn = async (req, res, next) => {
   try {
-    req.user = await findUserWithToken(req.headers.authorization);
+    req.user = await findUserWithToken(req.headers.authorization.split("")[1]);
     next();
   } catch (ex) {
     next(ex);
@@ -89,6 +90,14 @@ app.get("/api/categories", async (req, res, next) => {
     next(ex);
   }
 });
+
+app.get("/api/categories/:categoryName", async (req, res, next) => {
+    try {
+      res.send(await seeCategoryProducts(req.params.categoryName));
+    } catch (ex) {
+      next(ex);
+    }
+  });
 
 // create an account
 app.post("/api/auth/register", async (req, res, next) => {
@@ -248,6 +257,15 @@ app.delete(
 );
 
 // login user able to purchase products
+
+//  login user to see information about user
+app.get("/api/myaccount", isLoggedIn, async (req, res, next) => {
+    try {
+      res.status(201).send(await seeUser(req.user.id));
+    } catch (ex) {
+      next(ex);
+    }
+  });
 
 //  login user able to update information about user
 app.put("/api/users/:id", isLoggedIn, async (req, res, next) => {
