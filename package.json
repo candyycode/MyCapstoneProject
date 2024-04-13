@@ -7,6 +7,8 @@
     "start:dev": "nodemon server",
     "start": "node server/index.js",
     "build": "npm install & cd client && npm install && npm run build",
+    "create_tables": "psql -U perryc -d my_store_db -a -f ./server/schema.sql",
+    "dev": "npm run create_tables && npm run start:dev",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
