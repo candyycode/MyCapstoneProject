@@ -297,6 +297,39 @@ img {
   background-color: #d33; /* Change button background color on hover */
 }
 
+.product-details-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.ProductDetails {
+  background-color: rgba(255, 255, 255, 0.5); /* Transparent background */
+  padding: 20px;
+  border-radius: 10px;
+}
+
+.go-back-button-container {
+  display: flex;
+  justify-content: center;
+}
+
+.go-back-button {
+  margin-top: 20px;
+  background-color: red; /* Red background */
+  color: white; /* White font color */
+  border: none;
+  border-radius: 5px;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.go-back-button:hover {
+  background-color: darkred; /* Darker red background on hover */
+}
+
 
 .search-bar {
   padding: 40px;

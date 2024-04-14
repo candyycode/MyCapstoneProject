@@ -37,7 +37,7 @@ export default function ProductDetails({ token }) {
         },
         body: JSON.stringify({
           quantity: 1,
-          product_id: productDetails.id
+          product_id: productDetails.id,
         }),
       });
       await response.json();
@@ -53,21 +53,26 @@ export default function ProductDetails({ token }) {
 
   return (
     <>
-      <div className="ProductDetails">
-        <h1>{productDetails.name}</h1>
-        <img src={productDetails.imageurl} alt="product image" />
-        <h2>Description: {productDetails.description}</h2>
-        <p>Price: {productDetails.price}</p>
-        {token ? (
-          <>
-          <button onClick={handleClick}>Add Item</button>
-          {successMessage && <p>{successMessage}</p>}
-          {error && <p>{error}</p>}
-          </>
-        ) : (
-          <p>This item is available in stock!</p>
-        )}
-        <button onClick={() => navigate(-1)}>Go Back</button>
+      <div className="prduct-details-container">
+        <div className="ProductDetails">
+          <h1>{productDetails.name}</h1>
+          <img src={productDetails.imageurl} alt="product image" />
+          <h2>Description: {productDetails.description}</h2>
+          <p>Price: {productDetails.price}</p>
+          {token ? (
+            <>
+              <button onClick={handleClick}>Add Item</button>
+              {successMessage && <p>{successMessage}</p>}
+              {error && <p>{error}</p>}
+            </>
+          ) : (
+            <p>This item is available in stock!</p>
+          )}
+          <h4>Log in or create an account to purchase items</h4>
+          <div className="go-back-button-container">
+            <button onClick={() => navigate(-1)}>Go Back</button>
+          </div>
+        </div>
       </div>
     </>
   );
