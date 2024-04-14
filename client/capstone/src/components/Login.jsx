@@ -70,27 +70,31 @@ export default function Login({ user, setUser, token, setToken }) {
           {error && <p>{error}</p>}
           {successMessage && <p>{successMessage}</p>}
           <form className="form" onSubmit={submit}>
-            <label htmlFor={"email"} className="email">
+            <label htmlFor="email" className="email">
               Email address:{" "}
               <input
-                type={"email"}
+                type="email"
+                id="email"
                 value={email}
                 onChange={(ev) => setEmail(ev.target.value)}
+                autoComplete="email" // Add autocomplete attribute
               />
             </label>
-            <label htmlFor={"password"} className="password">
+            <label htmlFor="password" className="password">
               Password:{" "}
               <input
-                type={"password"}
+                type="password"
+                id="password"
                 value={password}
                 onChange={(ev) => setPassword(ev.target.value)}
+                autoComplete="current-password" // Add autocomplete attribute
               />
             </label>
             <button disabled={!email || !password}>Login</button>
           </form>
           <div className="container">
-          <p>If you do not have an account, create one below!</p>
-          <button onClick={() => navigate("/register")}>Create Account</button>
+            <p>If you do not have an account, create one below!</p>
+            <button onClick={() => navigate("/register")}>Create Account</button>
           </div>
         </div>
       ) : (

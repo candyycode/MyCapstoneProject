@@ -66,7 +66,7 @@ export default function ProductDetails({ token }) {
         <p>Price: {productDetails.price}</p>
         {token ? (
           <>
-          <button onClick={()=>{handleClick()}}>Add Product</button>
+          <button onClick={()=>{handleClick()}}>Add Item</button>
           {successMessage && <p>{successMessage}</p>}
           {error && <p>{error}</p>}
           </>

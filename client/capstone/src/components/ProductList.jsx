@@ -48,7 +48,7 @@ export default function ProductList() {
               <li key={product.id} className="product">
                 <h3>{product.name}</h3>
                 {/* Change the alt attribute to dynamically display the product name */}
-                <img src={product.imageURL} alt={product.name} />
+                <img src={product.imageurl} alt="product image" />
                 <p>Price: ${product.price}</p>
                 <button onClick={() => navigate(`/products/${product.id}`)}>
                   View Product
