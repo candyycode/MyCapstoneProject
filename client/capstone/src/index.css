@@ -162,10 +162,101 @@ img {
 }
 
 .categoryProducts {
-  list-style: none; /* Remove default list styles */
-  padding: 0; /* Remove default padding */
+  list-style: none;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  justify-content: center;
 }
 
+.categoryProducts li {
+  background-color: rgba(255, 255, 255, 0.8);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  width: 300px;
+}
+
+.categoryProducts li img {
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+.categoryProducts li h3 {
+  margin-bottom: 10px;
+}
+
+.categoryProducts li p {
+  margin-bottom: 10px;
+}
+
+.categoryProducts li button {
+  background-color: rgb(246, 56, 56);
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.categoryProducts li button:hover {
+  background-color: #d33;
+}
+
+.categories-dropdown select {
+  /* Set background color to red */
+  background-color: red;
+  /* Set font color to white */
+  color: white;
+  /* Set border radius to make it rounded */
+  border-radius: 8px;
+  /* Increase padding to make it bigger */
+  padding: 12px;
+  /* Set font size */
+  font-size: 16px;
+  /* Ensure the dropdown menu is visible on top of other elements */
+  z-index: 1;
+  /* Remove default styling */
+  appearance: none;
+  /* Add border to the dropdown */
+  border: 2px solid red;
+}
+
+/* Style for dropdown arrow */
+.categories-dropdown select::after {
+  content: "\25BC"; /* Unicode character for downward arrow */
+  position: absolute;
+  top: 50%;
+  right: 15px;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+/* Style for dropdown arrow (open) */
+.categories-dropdown select:focus::after {
+  content: "\25B2"; /* Unicode character for upward arrow */
+}
+
+/* Style for dropdown options */
+.categories-dropdown select option {
+  /* Set background color to red */
+  background-color: red;
+  /* Set font color to white */
+  color: white;
+  /* Add padding */
+  padding: 10px;
+}
+
+/* Style for dropdown options on hover */
+.categories-dropdown select option:hover {
+  /* Set background color to a lighter shade of red */
+  background-color: #d32f2f;
+}
 
 .product {
   display: flex;

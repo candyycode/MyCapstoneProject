@@ -1,12 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import PropTypes from 'prop-types'; // Import PropTypes
 import { API_URL } from "../main";
-
-// Define PropTypes
-ProductDetails.defaultProps = {
-  token: null,
-};
 
 export default function ProductDetails({ token }) {
   const [productDetails, setProductDetails] = useState({});
@@ -24,7 +18,8 @@ export default function ProductDetails({ token }) {
           },
         });
         const result = await response.json();
-        setProductDetails(result);
+        console.log("Product Details:", result[0]); // Log the product details object inside the array
+        setProductDetails(result[0]); // Set the product details
       } catch (error) {
         console.log(error);
       }
@@ -34,7 +29,6 @@ export default function ProductDetails({ token }) {
 
   async function handleClick() {
     try {
-      console.log(token);
       const response = await fetch(`${API_URL}/mycart/cartitems`, {
         method: "POST",
         headers: {
@@ -61,12 +55,12 @@ export default function ProductDetails({ token }) {
     <>
       <div className="ProductDetails">
         <h1>{productDetails.name}</h1>
-        <img src={productDetails.imageURL} alt="product image" />
+        <img src={productDetails.imageurl} alt="product image" />
         <h2>Description: {productDetails.description}</h2>
         <p>Price: {productDetails.price}</p>
         {token ? (
           <>
-          <button onClick={()=>{handleClick()}}>Add Item</button>
+          <button onClick={handleClick}>Add Item</button>
           {successMessage && <p>{successMessage}</p>}
           {error && <p>{error}</p>}
           </>

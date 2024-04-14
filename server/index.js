@@ -48,13 +48,13 @@ const path = require('path');
 
 // Custom middleware for checking if user is logged in
 const isLoggedIn = async (req, res, next) => {
-  try {
-    req.user = await findUserWithToken(req.headers.authorization.split("")[1]);
-    next();
-  } catch (ex) {
-    next(ex);
-  }
-};
+    try {
+      req.user = await findUserWithToken(req.headers.authorization.split(" ")[1]); 
+      next();
+    } catch (ex) {
+      next(ex);
+    }
+  };
 
 // Custom middleware for checking if user is admin
 const isAdmin = async (req, res, next) => {

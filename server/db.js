@@ -345,50 +345,50 @@ const createCategory = async ({ name }) => {
 
 // password authentication
 const authenticate = async ({ email, password }) => {
-  const SQL = `
-    SELECT id, email, password
-    FROM users
-    WHERE email=$1;
-  `;
-  const response = await client.query(SQL, [email]);
-  if (
-    !response.rows.length ||
-    (await bcrypt.compare(password, response.rows[0].password)) === false
-  ) {
-    const error = Error("not authorized");
-    error.status = 401;
-    throw error;
-  }
-  const token = await jwt.sign({ admin: response.rows[0].is_admin }, JWT);
-  return { token: token };
-};
+    const SQL = `
+      SELECT id, email, password
+      FROM users
+      WHERE email=$1;
+    `;
+    const response = await client.query(SQL, [email]);
+    if (
+      !response.rows.length ||
+      (await bcrypt.compare(password, response.rows[0].password)) === false
+    ) {
+      const error = new Error("not authorized"); // Change here
+      error.status = 401;
+      throw error;
+    }
+    const token = await jwt.sign({ admin: response.rows[0].is_admin }, JWT);
+    return { token: token };
+  };
 
 // use token to secure login process
 const findUserWithToken = async (token) => {
-  let id;
-  try {
-    const payload = await jwt.verify(token, JWT);
-    console.log({ payload });
-    id = payload.id;
-  } catch (ex) {
-    const error = Error("not authorized");
-    error.status = 401;
-    throw error;
-  }
-  const SQL = `
-    SELECT id, email
-    FROM users
-    WHERE id=$1;
-  `;
-  const response = await client.query(SQL, [id]);
-  console.log(response.rows[0], "line 269");
-  if (!response.rows.length) {
-    const error = Error("not authorized");
-    error.status = 401;
-    throw error;
-  }
-  return response.rows[0];
-};
+    let id;
+    try {
+      const payload = await jwt.verify(token, JWT);
+      console.log({ payload });
+      id = payload.id;
+    } catch (ex) {
+      const error = new Error("JWT verification failed"); 
+      error.status = 401;
+      throw error;
+    }
+    const SQL = `
+      SELECT id, email
+      FROM users
+      WHERE id=$1;
+    `;
+    const response = await client.query(SQL, [id]);
+    console.log(response.rows[0], "line 269");
+    if (!response.rows.length) {
+      const error = new Error("not authorized");
+      error.status = 401;
+      throw error;
+    }
+    return response.rows[0];
+  };
 
 module.exports = {
   client,

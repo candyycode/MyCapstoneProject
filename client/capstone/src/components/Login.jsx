@@ -2,31 +2,42 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { API_URL } from "../main";
 
-export default function Login({ user, setUser, token, setToken }) {
+const Login = ({ user, setUser, token, setToken }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [successMessage, setSuccessMessage] = useState(null);
   const [error, setError] = useState(null);
-
   const navigate = useNavigate();
 
-  const submit = (ev) => {
-    ev.preventDefault();
-    login({ email, password });
+  const handleLoginSuccess = (token, email) => {
+    window.localStorage.setItem("token", token);
+    setToken(token);
+    attemptLoginWithToken();
+    setUser(email);
+    setSuccessMessage("Login success");
+  };
+
+  const handleLoginFailure = (errorMessage) => {
+    setError(errorMessage);
+    console.error("Login error:", errorMessage);
   };
 
   const attemptLoginWithToken = async () => {
     const token = window.localStorage.getItem("token");
     if (token) {
-      const response = await fetch(`${API_URL}/auth/me`, {
-        headers: {
-          authorization: `Bearer ${token}`,
-        },
-      });
-      const result = await response.json();
-      if (response.ok) {
+      try {
+        const response = await fetch(`${API_URL}/auth/me`, {
+          headers: {
+            authorization: `Bearer ${token}`,
+          },
+        });
+        if (!response.ok) {
+          throw new Error("Failed to fetch user data");
+        }
+        const result = await response.json();
         console.log(result);
-      } else {
+      } catch (error) {
+        console.error("Token validation error:", error.message);
         window.localStorage.removeItem("token");
       }
     }
@@ -41,20 +52,21 @@ export default function Login({ user, setUser, token, setToken }) {
           "Content-Type": "application/json",
         },
       });
-      const result = await response.json();
-      if (response.ok) {
-        window.localStorage.setItem("token", result.token);
-        setToken(result.token);
-        attemptLoginWithToken();
-        setUser(`${email}`);
-        setSuccessMessage("Login success");
-      } else {
-        setError("Failed to login. Please enter correct password or create an account");
-        console.log(result);
+
+      if (!response.ok) {
+        throw new Error("Failed to login. Please check your credentials.");
       }
+
+      const result = await response.json();
+      handleLoginSuccess(result.token, credentials.email);
     } catch (error) {
-      console.log(error);
+      handleLoginFailure("An error occurred while logging in. Please try again later.");
     }
+  };
+
+  const submit = (ev) => {
+    ev.preventDefault();
+    login({ email, password });
   };
 
   const logout = () => {
@@ -105,4 +117,6 @@ export default function Login({ user, setUser, token, setToken }) {
       )}
     </>
   );
-}
+};
+
+export default Login;

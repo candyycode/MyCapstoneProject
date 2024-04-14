@@ -32,22 +32,21 @@ export default function ProductList() {
           <input
             className="search-input"
             type="search"
-            placeholder="Type to search for a product"
+            placeholder="Type to search for a product.."
             value={searchInput}
             onChange={handleChange}
           />
         </div>
       </div>
-      <ul className="product">
+      <ul className="categoryProducts"> {/* Update className to categoryProducts */}
         {products
           .filter((product) =>
             product.name.toLowerCase().match(searchInput.toLowerCase())
           )
           .map((product) => {
             return (
-              <li key={product.id} className="product">
+              <li key={product.id} className="product"> {/* Remove className product */}
                 <h3>{product.name}</h3>
-                {/* Change the alt attribute to dynamically display the product name */}
                 <img src={product.imageurl} alt="product image" />
                 <p>Price: ${product.price}</p>
                 <button onClick={() => navigate(`/products/${product.id}`)}>
