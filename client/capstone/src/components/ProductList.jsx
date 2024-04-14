@@ -19,7 +19,6 @@ export default function ProductList() {
 
   const handleChange = (e) => {
     e.preventDefault();
-    console.log(products);
     setSearchInput(e.target.value);
   };
 
@@ -48,7 +47,8 @@ export default function ProductList() {
             return (
               <li key={product.id} className="product">
                 <h3>{product.name}</h3>
-                <img src={product.imageurl} alt="product image" />
+                {/* Change the alt attribute to dynamically display the product name */}
+                <img src={product.imageURL} alt={product.name} />
                 <p>Price: ${product.price}</p>
                 <button onClick={() => navigate(`/products/${product.id}`)}>
                   View Product

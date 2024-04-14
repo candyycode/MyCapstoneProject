@@ -81,7 +81,6 @@ export default function MyCart({ token }) {
         throw new Error("Item could not be deleted.");
       }
       await getCartItems();
-      await getTotalPrice();
     } catch (error) {
       console.log(error);
     }
@@ -150,7 +149,7 @@ export default function MyCart({ token }) {
               Please log in
               <button onClick={() => navigate("/login")}>Login</button>
               or register
-              <button onClick={() => navigate("/register")}>Register</button>
+              <button onClick={() => navigate("/register")}>CreateAccount</button>
               to your account
             </h3>
           )}

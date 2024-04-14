@@ -11,6 +11,7 @@ const {
   seeCart,
   createCartProduct,
   seeCartProducts,
+  seeTotalPrice,
   addProductToCart,
   deleteProductFromCart,
   changeQuantity,
@@ -171,6 +172,17 @@ app.get("/api/mycart/cartitems", isLoggedIn, async (req, res, next) => {
     next(error);
   }
 });
+
+// login user to see total price of cart
+app.get("/api/mycart/cartitemsprice", isLoggedIn, async (req, res, next) => {
+    try {
+      const cartId = await seeCart(req.user.id);
+      const totalPrice = await seeTotalPrice(cartId.id);
+      res.status(201).send(totalPrice);
+    } catch (ex) {
+      next(ex);
+    }
+  });
 
 // login user able to add product to cart
 app.post("/api/mycart/cartitems", isLoggedIn, async (req, res, next) => {

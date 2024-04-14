@@ -174,6 +174,19 @@ const seeCartProducts = async (cart_id) => {
   return rows[0];
 };
 
+//  view total price of cart products
+const seeTotalPrice = async (cart_id) => {
+    const SQL = `
+        SELECT SUM (p.price * cp.quantity)
+        FROM cart_products cp
+        INNER JOIN products p
+        ON p.id=cp.product_id
+        WHERE cp.cart_id = $1
+      `;
+    const response = await client.query(SQL, [cart_id]);
+    return response.rows[0];
+  };
+
 // Add a product to cart
 const addProductToCart = async ({ cart_id, product_id, quantity }) => {
   const SQL = `
@@ -259,29 +272,29 @@ const seeUsers = async () => {
 };
 
 const createProduct = async ({
-  name,
-  imageURL,
-  price,
-  description,
-  inventory,
-  category_name,
-}) => {
-  const SQL = `
-      INSERT INTO products(id, imageURL, name, price, description, inventory, category_name)
-      VALUES($1, $2, $3, $4, $5, $6, $7)
-      RETURNING *
-    `;
-  const response = await client.query(SQL, [
-    uuid.v4(),
     name,
     imageURL,
     price,
     description,
     inventory,
     category_name,
-  ]);
-  return response.rows[0];
-};
+  }) => {
+    const SQL = `
+        INSERT INTO products(id, name, imageURL, price, description, inventory, category_name)
+        VALUES($1, $2, $3, $4, $5, $6, $7)
+        RETURNING *
+      `;
+    const response = await client.query(SQL, [
+      uuid.v4(),
+      name,
+      imageURL,
+      price,
+      description,
+      inventory,
+      category_name,
+    ]);
+    return response.rows[0];
+  };
 
 const updateProduct = async ({
   name,
@@ -389,6 +402,7 @@ module.exports = {
   seeCart,
   createCartProduct,
   seeCartProducts,
+  seeTotalPrice,
   addProductToCart,
   deleteProductFromCart,
   changeQuantity,

@@ -1,43 +1,80 @@
-import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import PropTypes from 'prop-types'; // Import PropTypes
+import { API_URL } from "../main";
 
-const ProductDetails = () => {
-  const { productId } = useParams(); // Get the productId from URL params
-  const [product, setProduct] = useState(null);
-
-  useEffect(() => {
-    // Fetch individual product details from API using productId
-    const fetchProductDetails = async () => {
-      try {
-        const response = await fetch(`/api/products/${productId}`); 
-        const data = await response.json();
-        setProduct(data);
-      } catch (error) {
-        console.error('Error fetching product details:', error);
-      }
-    };
-
-    fetchProductDetails();
-
-    // Cleanup function to cancel the fetch request (optional)
-    return () => {
-      // Cleanup logic
-    };
-  }, [productId]);
-
-  return (
-    <div>
-      {product ? (
-        <div>
-          <h2>{product.name}</h2>
-          <p>Price: ${product.price}</p>
-          <p>Description: {product.description}</p>
-        </div>
-      ) : (
-        <p>Loading...</p>
-      )}
-    </div>
-  );
+// Define PropTypes
+ProductDetails.defaultProps = {
+  token: null,
 };
 
-export default ProductDetails;
+export default function ProductDetails({ token }) {
+  const [productDetails, setProductDetails] = useState({});
+  const [successMessage, setSuccessMessage] = useState(null);
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
+  let { id } = useParams();
+
+  useEffect(() => {
+    const getProductDetails = async () => {
+      try {
+        const response = await fetch(`${API_URL}/products/${id}`, {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+        const result = await response.json();
+        setProductDetails(result);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    getProductDetails();
+  }, []);
+
+  async function handleClick() {
+    try {
+      console.log(token);
+      const response = await fetch(`${API_URL}/mycart/cartitems`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          quantity: 1,
+          product_id: productDetails.id
+        }),
+      });
+      await response.json();
+      if (response.ok) {
+        setSuccessMessage("Item is added to cart");
+      } else {
+        setError("Unable to add this item to cart");
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  return (
+    <>
+      <div className="ProductDetails">
+        <h1>{productDetails.name}</h1>
+        <img src={productDetails.imageURL} alt="product image" />
+        <h2>Description: {productDetails.description}</h2>
+        <p>Price: {productDetails.price}</p>
+        {token ? (
+          <>
+          <button onClick={()=>{handleClick()}}>Add Product</button>
+          {successMessage && <p>{successMessage}</p>}
+          {error && <p>{error}</p>}
+          </>
+        ) : (
+          <p>This item is available in stock!</p>
+        )}
+        <button onClick={() => navigate(-1)}>Go Back</button>
+      </div>
+    </>
+  );
+}

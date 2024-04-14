@@ -85,11 +85,13 @@ export default function CreateAccount({ user, setUser, token, setToken }) {
                 validateForm();
               }}
             >
-              Register
+              Create Account
             </button>
           </form>
+          <div className="container">
           <p>If you already have an account, please log into your account now.</p>
           <button onClick={() => navigate("/login")}>Log in</button>
+          </div>
         </div>
       )}
     </>

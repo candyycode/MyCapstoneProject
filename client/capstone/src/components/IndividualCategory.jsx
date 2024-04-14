@@ -27,7 +27,8 @@ export default function IndividualCategory() {
 
   const handleChange = (e) => {
     e.preventDefault();
-    setSearchInput(e.target.value);
+    const inputValue = e.target.value.toLowerCase();
+    setSearchInput(inputValue);
   };
 
   return (
@@ -48,24 +49,20 @@ export default function IndividualCategory() {
         <ul className="categoryProducts">
           {categoryDetails
             .filter((categoryDetail) =>
-              categoryDetail.name.toLowerCase().match(searchInput.toLowerCase())
+              categoryDetail.name.toLowerCase().includes(searchInput) ||
+              categoryDetail.description.toLowerCase().includes(searchInput)
             )
-            .map((categoryDetail) => {
-              return (
-                <>
-                  <li key={categoryDetail.id} className="product">
-                    <h3>{categoryDetail.name}</h3>
-                    <img src={categoryDetail.imageurl} alt="product image" />
-                    <p>Price: ${categoryDetail.price}</p>
-                    <button
-                      onClick={() => navigate(`/products/${categoryDetail.id}`)}
-                    >
-                      View Product
-                    </button>
-                  </li>
-                </>
-              );
-            })}
+            .map((categoryDetail) => (
+              <li key={categoryDetail.id} className="product">
+                <h3>{categoryDetail.name}</h3>
+                <p>{categoryDetail.description}</p>
+                <img src={categoryDetail.imageurl} alt="product image" />
+                <p>Price: ${categoryDetail.price}</p>
+                <button onClick={() => navigate(`/products/${categoryDetail.id}`)}>
+                  View Product
+                </button>
+              </li>
+            ))}
         </ul>
         <button onClick={() => navigate(-1)}>Go Back</button>
       </div>

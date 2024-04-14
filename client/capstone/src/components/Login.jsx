@@ -88,8 +88,10 @@ export default function Login({ user, setUser, token, setToken }) {
             </label>
             <button disabled={!email || !password}>Login</button>
           </form>
-          <p>Don't have an account yet?</p>
-          <button onClick={() => navigate("/register")}>Register</button>
+          <div className="container">
+          <p>If you do not have an account, create one below!</p>
+          <button onClick={() => navigate("/register")}>Create Account</button>
+          </div>
         </div>
       ) : (
         <div>

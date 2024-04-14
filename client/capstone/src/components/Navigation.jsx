@@ -30,7 +30,7 @@ export default function Navigation({ token }) {
             Login
           </Link>
           <Link to="/register" className="nav">
-            Register
+            Create Account
           </Link>
         </>
       )}
