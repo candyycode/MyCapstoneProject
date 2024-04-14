@@ -11,10 +11,10 @@ export default function CreateAccount({ user, setUser, token, setToken }) {
 
   const submit = (ev) => {
     ev.preventDefault();
-    CreateAccount({ email, password });
+    createAccount({ email, password });
   };
 
-  const CreateAccount = async (credentials) => {
+  const createAccount = async (credentials) => {
     try {
       const response = await fetch(`${API_URL}/auth/register`, {
         method: "POST",
@@ -26,9 +26,7 @@ export default function CreateAccount({ user, setUser, token, setToken }) {
       const result = await response.json();
       if (response.ok) {
         window.localStorage.setItem("token", result.token);
-        setSuccessMessage(
-          "Account created. Please log in to your account"
-        );
+        setSuccessMessage("Account created. Please log in to your account");
         setToken(result.token);
         setUser(email);
       } else {
@@ -41,13 +39,11 @@ export default function CreateAccount({ user, setUser, token, setToken }) {
 
   function validateForm() {
     if (password.length < 5) {
-      alert(
-        "Password must contain at least 5 characters."
-      );
+      alert("Password must contain at least 5 characters.");
       return;
     }
-    if (email == password) {
-      alert("Password cant be the same as email.");
+    if (email === password) {
+      alert("Password cannot be the same as email.");
       return;
     }
   }
@@ -62,20 +58,26 @@ export default function CreateAccount({ user, setUser, token, setToken }) {
           {error && <p>{error}</p>}
           {successMessage && <p>{successMessage}</p>}
           <form className="form" onSubmit={submit}>
-            <label htmlFor={"email"} className="email">
+            <label htmlFor="email" className="email">
               Email address:{" "}
               <input
-                type={"email"}
+                type="email"
+                id="email"
+                name="email"
                 value={email}
                 onChange={(ev) => setEmail(ev.target.value)}
+                autoComplete="email" // Add autocomplete attribute
               />
             </label>
-            <label htmlFor={"password"} className="password">
+            <label htmlFor="password" className="password">
               Password:{" "}
               <input
-                type={"password"}
+                type="password"
+                id="password"
+                name="password"
                 value={password}
                 onChange={(ev) => setPassword(ev.target.value)}
+                autoComplete="new-password" // Add autocomplete attribute
               />
             </label>
             <button
@@ -89,8 +91,8 @@ export default function CreateAccount({ user, setUser, token, setToken }) {
             </button>
           </form>
           <div className="container">
-          <p>If you already have an account, please log into your account now.</p>
-          <button onClick={() => navigate("/login")}>Log in</button>
+            <p>If you already have an account, please log into your account now.</p>
+            <button onClick={() => navigate("/login")}>Log in</button>
           </div>
         </div>
       )}
