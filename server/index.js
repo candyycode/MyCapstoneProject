@@ -454,11 +454,6 @@ const init = async () => {
         email: "sarah@icloud.com",
         password: "kittylover",
       }),
-
-      createUser({
-        email: "jasper@test.com",
-        password: "123456",
-      }),
     ]);
 
     const [cat, dog, exotics] = await Promise.all([
