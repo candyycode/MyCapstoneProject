@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { API_URL } from "../main";
 
@@ -9,11 +9,13 @@ const Login = ({ user, setUser, token, setToken }) => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    attemptLoginWithToken();
+  }, []);
+
   const handleLoginSuccess = (token, email) => {
     window.localStorage.setItem("token", token);
     setToken(token);
-    attemptLoginWithToken();
-
     setUser(email);
     setSuccessMessage("Login success");
   };
@@ -37,6 +39,8 @@ const Login = ({ user, setUser, token, setToken }) => {
         }
         const result = await response.json();
         console.log(result);
+
+        handleLoginSuccess(token, result.email);
       } catch (error) {
         console.error("Token validation error:", error.message);
         window.localStorage.removeItem("token");
