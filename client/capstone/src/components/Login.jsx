@@ -13,6 +13,7 @@ const Login = ({ user, setUser, token, setToken }) => {
     window.localStorage.setItem("token", token);
     setToken(token);
     attemptLoginWithToken();
+
     setUser(email);
     setSuccessMessage("Login success");
   };
@@ -60,7 +61,9 @@ const Login = ({ user, setUser, token, setToken }) => {
       const result = await response.json();
       handleLoginSuccess(result.token, credentials.email);
     } catch (error) {
-      handleLoginFailure("An error occurred while logging in. Please try again later.");
+      handleLoginFailure(
+        "An error occurred while logging in. Please try again later."
+      );
     }
   };
 
@@ -106,7 +109,9 @@ const Login = ({ user, setUser, token, setToken }) => {
           </form>
           <div className="container">
             <p>If you do not have an account, create one below!</p>
-            <button onClick={() => navigate("/register")}>Create Account</button>
+            <button onClick={() => navigate("/register")}>
+              Create Account
+            </button>
           </div>
         </div>
       ) : (
