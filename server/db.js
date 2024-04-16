@@ -10,13 +10,13 @@ const jwt = require("jsonwebtoken");
 const JWT = process.env.JWT || "shhh";
 
 const createTables = async () => {
-  const SQL = `
-  DROP TABLE IF EXISTS cart_products;
-  DROP TABLE IF EXISTS carts;
-  DROP TABLE IF EXISTS users;
-  DROP TABLE IF EXISTS products;
-  DROP TABLE IF EXISTS categories;
+  //   DROP TABLE IF EXISTS cart_products;
+  // DROP TABLE IF EXISTS carts;
 
+  // DROP TABLE IF EXISTS products;
+  // DROP TABLE IF EXISTS categories;
+  //  // DROP TABLE IF EXISTS users;
+  const SQL = `
   CREATE TABLE users(
     id UUID PRIMARY KEY,
     created_at TIMESTAMP DEFAULT now(),
@@ -106,18 +106,29 @@ const seeCategoryProducts = async (category_name) => {
 
 //  log in user
 const createUser = async ({ email, password, is_admin }) => {
-  const SQL = `
-    INSERT INTO users(id, email, password, is_admin)
-    VALUES($1, $2, $3, $4)
-    RETURNING *
-  `;
-  const response = await client.query(SQL, [
-    uuid.v4(),
-    email,
-    await bcrypt.hash(password, 5),
-    is_admin,
-  ]);
-  return response.rows[0];
+  let rows;
+
+  let SQL = `SELECT * FROM users WHERE email=$1`;
+  let response = await client.query(SQL, [email]);
+
+  rows = response.rows;
+
+  if (!rows.length) {
+    SQL = `
+      INSERT INTO users(id, email, password, is_admin)
+      VALUES($1, $2, $3, $4)
+      RETURNING *
+    `;
+    response = await client.query(SQL, [
+      uuid.v4(),
+      email,
+      await bcrypt.hash(password, 5),
+      is_admin,
+    ]);
+    rows = response.rows;
+  }
+
+  return rows[0];
 };
 
 // new cart
@@ -138,10 +149,12 @@ const seeCart = async (userId) => {
     FROM carts
     WHERE user_id=$1
   `;
+
   const cartIdRes = await client.query(GET_CART_ID, [userId]);
   if (!cartIdRes) {
     throw new Error("No cart available");
   }
+
   return cartIdRes.rows[cartIdRes.rows.length - 1];
 };
 
@@ -171,21 +184,21 @@ const seeCartProducts = async (cart_id) => {
         WHERE cart_products.cart_id = $1
       `;
   const { rows } = await client.query(SQL, [cart_id]);
-  return rows[0];
+  return rows;
 };
 
 //  view total price of cart products
 const seeTotalPrice = async (cart_id) => {
-    const SQL = `
+  const SQL = `
         SELECT SUM (p.price * cp.quantity)
         FROM cart_products cp
         INNER JOIN products p
         ON p.id=cp.product_id
         WHERE cp.cart_id = $1
       `;
-    const response = await client.query(SQL, [cart_id]);
-    return response.rows[0];
-  };
+  const response = await client.query(SQL, [cart_id]);
+  return response.rows[0];
+};
 
 // Add a product to cart
 const addProductToCart = async ({ cart_id, product_id, quantity }) => {
@@ -272,29 +285,29 @@ const seeUsers = async () => {
 };
 
 const createProduct = async ({
+  name,
+  imageURL,
+  price,
+  description,
+  inventory,
+  category_name,
+}) => {
+  const SQL = `
+        INSERT INTO products(id, name, imageURL, price, description, inventory, category_name)
+        VALUES($1, $2, $3, $4, $5, $6, $7)
+        RETURNING *
+      `;
+  const response = await client.query(SQL, [
+    uuid.v4(),
     name,
     imageURL,
     price,
     description,
     inventory,
     category_name,
-  }) => {
-    const SQL = `
-        INSERT INTO products(id, name, imageURL, price, description, inventory, category_name)
-        VALUES($1, $2, $3, $4, $5, $6, $7)
-        RETURNING *
-      `;
-    const response = await client.query(SQL, [
-      uuid.v4(),
-      name,
-      imageURL,
-      price,
-      description,
-      inventory,
-      category_name,
-    ]);
-    return response.rows[0];
-  };
+  ]);
+  return response.rows[0];
+};
 
 const updateProduct = async ({
   name,
@@ -345,50 +358,56 @@ const createCategory = async ({ name }) => {
 
 // password authentication
 const authenticate = async ({ email, password }) => {
-    const SQL = `
+  const SQL = `
       SELECT id, email, password
       FROM users
       WHERE email=$1;
     `;
-    const response = await client.query(SQL, [email]);
-    if (
-      !response.rows.length ||
-      (await bcrypt.compare(password, response.rows[0].password)) === false
-    ) {
-      const error = new Error("not authorized"); // Change here
-      error.status = 401;
-      throw error;
-    }
-    const token = await jwt.sign({ admin: response.rows[0].is_admin }, JWT);
-    return { token: token };
-  };
+  const response = await client.query(SQL, [email]);
+
+  if (
+    !response.rows.length ||
+    (await bcrypt.compare(password, response.rows[0].password)) === false
+  ) {
+    const error = new Error("not authorized"); // Change here
+    error.status = 401;
+    throw error;
+  }
+
+  const { is_admin, id } = response.rows[0];
+
+  const token = await jwt.sign({ admin: is_admin, id }, JWT);
+  return { token: token };
+};
 
 // use token to secure login process
 const findUserWithToken = async (token) => {
-    let id;
-    try {
-      const payload = await jwt.verify(token, JWT);
-      console.log({ payload });
-      id = payload.id;
-    } catch (ex) {
-      const error = new Error("JWT verification failed"); 
-      error.status = 401;
-      throw error;
-    }
-    const SQL = `
+  console.log(token);
+  let id;
+  try {
+    const payload = await jwt.verify(token, JWT);
+    console.log({ payload });
+    id = payload.id;
+  } catch (ex) {
+    const error = new Error("JWT verification failed");
+    error.status = 401;
+    throw error;
+  }
+  const SQL = `
       SELECT id, email
       FROM users
       WHERE id=$1;
     `;
-    const response = await client.query(SQL, [id]);
-    console.log(response.rows[0], "line 269");
-    if (!response.rows.length) {
-      const error = new Error("not authorized");
-      error.status = 401;
-      throw error;
-    }
-    return response.rows[0];
-  };
+
+  const response = await client.query(SQL, [id]);
+  console.log(response.rows[0], "line 269");
+  if (!response.rows.length) {
+    const error = new Error("not authorized");
+    error.status = 401;
+    throw error;
+  }
+  return response.rows[0];
+};
 
 module.exports = {
   client,
