@@ -7,61 +7,65 @@ export default function MyCart({ token }) {
   const [cartItems, setCartItems] = useState([]);
   const [totalPrice, setTotalPrice] = useState({});
 
+  useEffect(() => {
+    getCartItems().then((status) => {
+      if (status) {
+        getTotalPrice();
+      }
+    });
+  }, []);
+
   const getCartItems = async () => {
     try {
-      const response = await fetch(
-        `${API_URL}/mycart/cartitems`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await fetch(`${API_URL}/mycart/cartitems`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
       const result = await response.json();
+
+      if (!result) {
+        throw "Cart not found";
+      }
+
       setCartItems(result);
+
+      return true;
+    } catch (error) {
+      // console.log(error);
+      return false;
+    }
+  };
+
+  const getTotalPrice = async () => {
+    try {
+      const response = await fetch(`${API_URL}/mycart/cartitemsprice`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const result = await response.json();
+      setTotalPrice(result);
     } catch (error) {
       console.log(error);
     }
   };
 
-  useEffect(() => {
-    getCartItems();
-  }, []);
-
-
-  const getTotalPrice = async () => {
-      try {
-        const response = await fetch(
-          `${API_URL}/mycart/cartitemsprice`,
-          {
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        const result = await response.json();
-        setTotalPrice(result);
-      } catch (error) {
-        console.log(error);
-      }
-    };
-
-  useEffect(() => {
-    getTotalPrice();
-  }, []);
-
   async function changeQuantity(cartItemId) {
     try {
-      const response = await fetch(`${API_URL}/mycart/cartitems/${cartItemId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(),
-      });
+      const response = await fetch(
+        `${API_URL}/mycart/cartitems/${cartItemId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(),
+        }
+      );
       const result = await response.json();
       getCartItems();
     } catch (error) {
@@ -71,12 +75,15 @@ export default function MyCart({ token }) {
 
   async function deleteItem(cartItemId) {
     try {
-      const response = await fetch(`${API_URL}/mycart/cartitems/${cartItemId}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await fetch(
+        `${API_URL}/mycart/cartitems/${cartItemId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       if (!response.ok) {
         throw new Error("Item could not be deleted.");
       }
@@ -130,14 +137,44 @@ export default function MyCart({ token }) {
                         <td>{cartItem.name}</td>
                         <td>{cartItem.quantity}</td>
                         <td>{cartItem.price}</td>
-                        <button onClick={() => {changeQuantity(cartItem.id)}}>Increase</button>
-                        <button onClick={() => {deleteItem(cartItem.id)}}>Remove Item</button>
+                        <td>
+                          <button
+                            onClick={() => {
+                              changeQuantity(cartItem.id);
+                            }}
+                          >
+                            Increase
+                          </button>
+                        </td>
+                        <td>
+                          <button
+                            onClick={() => {
+                              deleteItem(cartItem.id);
+                            }}
+                          >
+                            Remove Item
+                          </button>
+                        </td>
                       </tr>
                     );
                   })}
                 </tbody>
-              <h3>Total price: ${totalPrice.sum}</h3>
-              <button onClick={() => {navigateOrder(); deleteCartWhenCheckout()}}>Checkout</button>
+
+                <tfoot>
+                  <tr>
+                    <td>
+                      <h3>Total price: ${totalPrice.sum}</h3>
+                      <button
+                        onClick={() => {
+                          navigateOrder();
+                          deleteCartWhenCheckout();
+                        }}
+                      >
+                        Checkout
+                      </button>
+                    </td>
+                  </tr>
+                </tfoot>
               </table>
             ) : (
               // if no items in cart display text
@@ -149,7 +186,9 @@ export default function MyCart({ token }) {
               Please log in
               <button onClick={() => navigate("/login")}>Login</button>
               or register
-              <button onClick={() => navigate("/register")}>CreateAccount</button>
+              <button onClick={() => navigate("/register")}>
+                CreateAccount
+              </button>
               to your account
             </h3>
           )}
