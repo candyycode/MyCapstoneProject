@@ -27,8 +27,12 @@ const {
   findUserWithToken,
 } = require("./db");
 
-const cors = require('cors');
+const cors = require("cors");
 const express = require("express");
+const dotenv = require("dotenv");
+
+dotenv.config();
+
 const app = express();
 
 app.use(express.json());
@@ -36,25 +40,33 @@ app.use(express.json());
 // Log the requests as they come in
 app.use(require("morgan")("dev"));
 
-app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:5173'],
-  methods: ['GET', 'POST', 'PUT','DELETE'],
-  credentials: true,
-  withCredentials: true,
-}))
+app.use(
+  cors({
+    origin: [
+      "http://localhost:3000",
+      "http://localhost:3001",
+      "http://localhost:5173",
+      "http://localhost:5174",
+      "https://ultimatepetstore.netlify.app",
+    ],
+  })
+);
+
+app.use(cors());
 
 //for deployment
-const path = require('path');
+const path = require("path");
 
 // Custom middleware for checking if user is logged in
 const isLoggedIn = async (req, res, next) => {
-    try {
-      req.user = await findUserWithToken(req.headers.authorization.split(" ")[1]); 
-      next();
-    } catch (ex) {
-      next(ex);
-    }
-  };
+  try {
+    req.user = await findUserWithToken(req.headers.authorization.split(" ")[1]);
+    next();
+  } catch (ex) {
+    res.status(401).json({ message: "Login to view page" });
+    // next(ex);
+  }
+};
 
 // Custom middleware for checking if user is admin
 const isAdmin = async (req, res, next) => {
@@ -94,12 +106,12 @@ app.get("/api/categories", async (req, res, next) => {
 });
 
 app.get("/api/categories/:categoryName", async (req, res, next) => {
-    try {
-      res.send(await seeCategoryProducts(req.params.categoryName));
-    } catch (ex) {
-      next(ex);
-    }
-  });
+  try {
+    res.send(await seeCategoryProducts(req.params.categoryName));
+  } catch (ex) {
+    next(ex);
+  }
+});
 
 // create an account
 app.post("/api/auth/register", async (req, res, next) => {
@@ -113,9 +125,11 @@ app.post("/api/auth/register", async (req, res, next) => {
 // login to account
 app.post("/api/auth/login", async (req, res, next) => {
   try {
-    res.send(await authenticate(req.body));
+    const token = await authenticate(req.body);
+    res.send(token);
   } catch (ex) {
     next(ex);
+    res.status(401).send({ message: "Failed to login" });
   }
 });
 
@@ -127,7 +141,7 @@ app.get("/api/auth/me", isLoggedIn, (req, res, next) => {
   try {
     res.send(req.user);
   } catch (ex) {
-    next(ex);
+    res.status(401).json({ message: "Uauthorized" });
   }
 });
 
@@ -135,6 +149,7 @@ app.get("/api/auth/me", isLoggedIn, (req, res, next) => {
 app.get("/api/mycart", isLoggedIn, async (req, res, next) => {
   try {
     const userId = req.user.id;
+
     let cart = await seeCart(userId);
 
     if (!cart) {
@@ -159,7 +174,7 @@ app.get("/api/mycart/cartitems", isLoggedIn, async (req, res, next) => {
 
     if (!cart) {
       // If the user doesn't have a cart, respond with an appropriate message
-      return res.status(404).send({ message: "Cart not found" });
+      return res.status(200).send({ message: "Cart not found" });
     }
 
     // Retrieve the cart products using the cart ID
@@ -175,14 +190,15 @@ app.get("/api/mycart/cartitems", isLoggedIn, async (req, res, next) => {
 
 // login user to see total price of cart
 app.get("/api/mycart/cartitemsprice", isLoggedIn, async (req, res, next) => {
-    try {
-      const cartId = await seeCart(req.user.id);
-      const totalPrice = await seeTotalPrice(cartId.id);
-      res.status(201).send(totalPrice);
-    } catch (ex) {
-      next(ex);
-    }
-  });
+  try {
+    const cartId = await seeCart(req.user.id);
+    const totalPrice = await seeTotalPrice(cartId.id);
+    res.status(201).send(totalPrice);
+  } catch (ex) {
+    // next(ex);
+    return res.status(200);
+  }
+});
 
 // login user able to add product to cart
 app.post("/api/mycart/cartitems", isLoggedIn, async (req, res, next) => {
@@ -204,7 +220,8 @@ app.post("/api/mycart/cartitems", isLoggedIn, async (req, res, next) => {
 
     res.send(result);
   } catch (ex) {
-    next(ex);
+    // next(ex);
+    res.status(401);
   }
 });
 
@@ -273,12 +290,12 @@ app.delete(
 
 //  login user to see information about user
 app.get("/api/myaccount", isLoggedIn, async (req, res, next) => {
-    try {
-      res.status(201).send(await seeUser(req.user.id));
-    } catch (ex) {
-      next(ex);
-    }
-  });
+  try {
+    res.status(201).send(await seeUser(req.user.id));
+  } catch (ex) {
+    next(ex);
+  }
+});
 
 //  login user able to update information about user
 app.put("/api/users/:id", isLoggedIn, async (req, res, next) => {
@@ -332,7 +349,8 @@ app.get("/api/admin/products", isLoggedIn, isAdmin, async (req, res, next) => {
 app.post("/api/admin/products", isLoggedIn, isAdmin, async (req, res, next) => {
   try {
     // Extract product data from request body
-    const { name, imageURL, price, description, inventory, category_name } = req.body;
+    const { name, imageURL, price, description, inventory, category_name } =
+      req.body;
 
     // Create the product
     const newProduct = await createProduct({
@@ -360,7 +378,8 @@ app.put(
   async (req, res, next) => {
     try {
       // Extract product data from request body
-      const { name, imageURL, price, description, inventory, category_name } = req.body;
+      const { name, imageURL, price, description, inventory, category_name } =
+        req.body;
 
       // Update the product
       const updatedProduct = await updateProduct({
@@ -415,12 +434,13 @@ app.get("/api/users/users", isLoggedIn, isAdmin, async (req, res, next) => {
 });
 
 const init = async () => {
-  await client.connect();
-  console.log("connected to database");
-  await createTables();
-  console.log("tables created");
-  const [cameron, emily, sarah] =
-    await Promise.all([
+  try {
+    await client.connect();
+    console.log("connected to database");
+
+    await createTables();
+    console.log("tables created");
+    const [cameron, emily, sarah] = await Promise.all([
       createUser({
         email: "cameron@icloud.com",
         password: "exoticguy",
@@ -434,18 +454,24 @@ const init = async () => {
         email: "sarah@icloud.com",
         password: "kittylover",
       }),
+
+      createUser({
+        email: "jasper@test.com",
+        password: "123456",
+      }),
     ]);
 
     const [cat, dog, exotics] = await Promise.all([
-        createCategory({ name: "cat" }),
-        createCategory({ name: "dog" }),
-        createCategory({ name: "exotics" }),
-      ]);
+      createCategory({ name: "cat" }),
+      createCategory({ name: "dog" }),
+      createCategory({ name: "exotics" }),
+    ]);
 
     const productsDisplay = await Promise.all([
       createProduct({
         name: "cat toy",
-        imageURL: "https://www.kittyspout.com/cdn/shop/files/13_77bc4248-6d31-4f07-b3c1-c70bd77f0485.png?v=1712212801&width=900",
+        imageURL:
+          "https://www.kittyspout.com/cdn/shop/files/13_77bc4248-6d31-4f07-b3c1-c70bd77f0485.png?v=1712212801&width=900",
         price: 1.99,
         description: "Turbo chase ball cat toys",
         inventory: 10,
@@ -453,7 +479,8 @@ const init = async () => {
       }),
       createProduct({
         name: "cat food",
-        imageURL: "https://www.vetstreet.com/wp-content/uploads/2024/01/Screenshot-2024-01-24-at-5.20.51%E2%80%AFPM.jpg",
+        imageURL:
+          "https://www.vetstreet.com/wp-content/uploads/2024/01/Screenshot-2024-01-24-at-5.20.51%E2%80%AFPM.jpg",
         price: 32.99,
         description: "The best cat food ever!",
         inventory: 15,
@@ -461,7 +488,8 @@ const init = async () => {
       }),
       createProduct({
         name: "dog food",
-        imageURL: "https://image.chewy.com/is/image/catalog/322681_MAIN._AC_SL600_V1635181278_.jpg",
+        imageURL:
+          "https://image.chewy.com/is/image/catalog/322681_MAIN._AC_SL600_V1635181278_.jpg",
         price: 54.98,
         description: "Ultimate nutrition dog food",
         inventory: 20,
@@ -469,7 +497,8 @@ const init = async () => {
       }),
       createProduct({
         name: "dog collar",
-        imageURL: "https://adityna.com/cdn/shop/products/5190aag98CL_1024x1024.jpg?v=1663509725",
+        imageURL:
+          "https://adityna.com/cdn/shop/products/5190aag98CL_1024x1024.jpg?v=1663509725",
         price: 19.95,
         description: "Premium dog collar",
         inventory: 25,
@@ -477,80 +506,88 @@ const init = async () => {
       }),
       createProduct({
         name: "cat collar",
-        imageURL: "https://m.media-amazon.com/images/I/71GSIz-LOeL._AC_SX679_.jpg",
+        imageURL:
+          "https://m.media-amazon.com/images/I/71GSIz-LOeL._AC_SX679_.jpg",
         price: 9.99,
         description: "Premium cat collar",
         inventory: 25,
         category_name: cat.name,
       }),
-    createProduct({
+      createProduct({
         name: "congo cage",
-        imageURL: "https://exoticnutrition.com/cdn/shop/files/CongoCageFront1.jpg?v=1692300548&width=900",
-        price: 250.00,
-        description: "The Exotic Congo Cage is manufactured with high quality materials. Constructed from wrought-iron, this cage is one of the toughest options available for your exotic pet!",
+        imageURL:
+          "https://exoticnutrition.com/cdn/shop/files/CongoCageFront1.jpg?v=1692300548&width=900",
+        price: 250.0,
+        description:
+          "The Exotic Congo Cage is manufactured with high quality materials. Constructed from wrought-iron, this cage is one of the toughest options available for your exotic pet!",
         inventory: 30,
         category_name: exotics.name,
       }),
-    createProduct({
+      createProduct({
         name: "Exotic pet travel cage",
-        imageURL: "https://exoticnutrition.com/cdn/shop/files/SmallAnimalTravelCageBlack_2.jpg?v=1692302022&width=900",
-        price: 115.00,
-        description: "The Exotic Pet Travel Cage is the perfect carrier or temporary home for a variety of small mammals birds. The cage is most suitable for short term housing. Includes feedwater dishes, wooden climbing post, and exterior perch handle.",
+        imageURL:
+          "https://exoticnutrition.com/cdn/shop/files/SmallAnimalTravelCageBlack_2.jpg?v=1692302022&width=900",
+        price: 115.0,
+        description:
+          "The Exotic Pet Travel Cage is the perfect carrier or temporary home for a variety of small mammals birds. The cage is most suitable for short term housing. Includes feedwater dishes, wooden climbing post, and exterior perch handle.",
         inventory: 30,
         category_name: exotics.name,
       }),
     ]);
 
-  const users = await seeUsers();
-  console.log("Users: ", users);
-  const category = await seeCategories();
-  console.log("Categories: ", category);
-  const products = await seeProducts();
-  console.log("Products: ", products);
-  const carts = await Promise.all([
-    createCart({ user_id: cameron.id }),
-    createCart({ user_id: emily.id }),
-    createCart({ user_id: sarah.id }),
-  ]);
-  console.log("Carts: ", carts);
+    const users = await seeUsers();
+    // console.log("Users: ", users);
+    const category = await seeCategories();
+    // console.log("Categories: ", category);
+    const products = await seeProducts();
+    // console.log("Products: ", products);
+    const carts = await Promise.all([
+      createCart({ user_id: cameron.id }),
+      createCart({ user_id: emily.id }),
+      createCart({ user_id: sarah.id }),
+    ]);
+    // console.log("Carts: ", carts);
 
-  const productsInCart = await Promise.all([
-    createCartProduct({
-      cart_id: carts[0].id,
-      product_id: productsDisplay[0].id, 
-      quantity: 3,
-    }),
-    createCartProduct({
-      cart_id: carts[0].id,
-      product_id: productsDisplay[1].id, 
-      quantity: 2,
-    }),
-    createCartProduct({
-      cart_id: carts[1].id,
-      product_id: productsDisplay[2].id, 
-      quantity: 1,
-    }),
-    createCartProduct({
-      cart_id: carts[1].id,
-      product_id: productsDisplay[3].id, 
-      quantity: 5,
-    }),
-    createCartProduct({
-      cart_id: carts[1].id,
-      product_id: productsDisplay[0].id, 
-      quantity: 4,
-    }),
-    createCartProduct({
-      cart_id: carts[2].id,
-      product_id: productsDisplay[1].id, 
-      quantity: 1,
-    }),
-  ]);
+    const productsInCart = await Promise.all([
+      createCartProduct({
+        cart_id: carts[0].id,
+        product_id: productsDisplay[0].id,
+        quantity: 3,
+      }),
+      createCartProduct({
+        cart_id: carts[0].id,
+        product_id: productsDisplay[1].id,
+        quantity: 2,
+      }),
+      createCartProduct({
+        cart_id: carts[1].id,
+        product_id: productsDisplay[2].id,
+        quantity: 1,
+      }),
+      createCartProduct({
+        cart_id: carts[1].id,
+        product_id: productsDisplay[3].id,
+        quantity: 5,
+      }),
+      createCartProduct({
+        cart_id: carts[1].id,
+        product_id: productsDisplay[0].id,
+        quantity: 4,
+      }),
+      createCartProduct({
+        cart_id: carts[2].id,
+        product_id: productsDisplay[1].id,
+        quantity: 1,
+      }),
+    ]);
+  } catch (e) {
+    console.error("Init done");
+  }
 
-  console.log(productsInCart);
+  // console.log(productsInCart);
 
   // Define a route handler for the root URL
-app.get("/", (req, res) => {
+  app.get("/", (req, res) => {
     res.send("Welcome to the Ultimate Pet Store!");
   });
 
