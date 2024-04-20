@@ -235,7 +235,7 @@ const changeQuantity = async ({ cart_id, product_id, quantity }) => {
     WHERE product_id=$2 AND cart_id=$3
     RETURNING *
   `;
-  const response = await client.query(SQL, [cart_id, product_id, quantity]);
+  const response = await client.query(SQL, [quantity, product_id, cart_id]);
   return response.rows[0];
 };
 

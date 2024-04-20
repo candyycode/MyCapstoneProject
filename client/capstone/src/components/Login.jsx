@@ -38,7 +38,6 @@ const Login = ({ user, setUser, token, setToken }) => {
           throw new Error("Failed to fetch user data");
         }
         const result = await response.json();
-        console.log(result);
 
         handleLoginSuccess(token, result.email);
       } catch (error) {

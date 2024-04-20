@@ -38,14 +38,18 @@ export default function ProductList() {
           />
         </div>
       </div>
-      <ul className="categoryProducts"> {/* Update className to categoryProducts */}
+      <ul className="categoryProducts">
+        {" "}
+        {/* Update className to categoryProducts */}
         {products
           .filter((product) =>
             product.name.toLowerCase().match(searchInput.toLowerCase())
           )
           .map((product) => {
             return (
-              <li key={product.id} className="product"> {/* Remove className product */}
+              <li key={product.id} className="product">
+                {" "}
+                {/* Remove className product */}
                 <h3>{product.name}</h3>
                 <img src={product.imageurl} alt="product image" />
                 <p>Price: ${product.price}</p>

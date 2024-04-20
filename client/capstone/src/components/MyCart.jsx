@@ -8,12 +8,14 @@ export default function MyCart({ token }) {
   const [totalPrice, setTotalPrice] = useState({});
 
   useEffect(() => {
-    getCartItems().then((status) => {
-      if (status) {
-        getTotalPrice();
-      }
-    });
-  }, []);
+    if (token) {
+      getCartItems().then((status) => {
+        if (status) {
+          getTotalPrice();
+        }
+      });
+    }
+  }, [token]);
 
   const getCartItems = async () => {
     try {
@@ -53,7 +55,7 @@ export default function MyCart({ token }) {
     }
   };
 
-  async function changeQuantity(cartItemId) {
+  async function changeQuantity(cartItemId, quantity) {
     try {
       const response = await fetch(
         `${API_URL}/mycart/cartitems/${cartItemId}`,
@@ -63,11 +65,12 @@ export default function MyCart({ token }) {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify(),
+          body: JSON.stringify({ quantity: parseInt(quantity) + 1 }),
         }
       );
       const result = await response.json();
       getCartItems();
+      getTotalPrice();
     } catch (error) {
       console.log(error);
     }
@@ -140,7 +143,7 @@ export default function MyCart({ token }) {
                         <td>
                           <button
                             onClick={() => {
-                              changeQuantity(cartItem.id);
+                              changeQuantity(cartItem.id, cartItem.quantity);
                             }}
                           >
                             Increase

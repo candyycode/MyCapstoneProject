@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Routes, Route } from "react-router-dom";
 import Navigation from "./components/Navigation";
 import Home from "./components/Home";
@@ -14,6 +14,14 @@ import UserSettings from "./components/UserSettings";
 function App() {
   const [token, setToken] = useState(null);
   const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const token = window.localStorage.getItem("token");
+
+    if (token) {
+      setToken(token);
+    }
+  }, [setToken]);
 
   return (
     <>

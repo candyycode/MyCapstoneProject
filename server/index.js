@@ -37,17 +37,17 @@ app.use(express.json());
 // Log the requests as they come in
 app.use(require("morgan")("dev"));
 
-app.use(
-  cors({
-    origin: [
-      "http://localhost:3000",
-      "http://localhost:3001",
-      "http://localhost:5173",
-      "http://localhost:5174",
-      "https://ultimatepetstore.netlify.app",
-    ],
-  })
-);
+// app.use(
+//   cors({
+//     origin: [
+//       "http://localhost:3000",
+//       "http://localhost:3001",
+//       "http://localhost:5173",
+//       "http://localhost:5174",
+//       "https://ultimatepetstore.netlify.app",
+//     ],
+//   })
+// );
 
 app.use(cors());
 
